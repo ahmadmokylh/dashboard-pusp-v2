@@ -1,0 +1,177 @@
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model User {
+  id            String    @id
+  name          String
+  email         String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  role         Role  @default(USER)
+
+  @@unique([email])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([token])
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+enum CATEGORY {
+  ALL            @map("كل التصنيفات")
+  OFFERS         @map("العروض")
+  ORGANIC_HONEY  @map("العسل العضوي")
+  HONEY_MIXES    @map("خلطات العسل")
+  HIVE_PRODUCTS  @map("منتجات الخلية")
+  FARM_PRODUCTS  @map("منتجات المزرعة")
+}
+
+
+
+// ─── Models ───────────────────────────────────────────────
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  slug        String    @unique
+  name        String
+  description String?
+  img         String
+  price       Decimal   @db.Decimal(10, 2)
+  newPrice    Decimal?  @db.Decimal(10, 2)
+  offer       String?
+  category    CATEGORY  @default(ALL)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  orderItems  OrderItem[]
+}
+
+model Customer {
+  id             Int      @id @default(autoincrement())
+  name           String?
+  phone          String?   
+  addressCountry String?
+  addressCity    String?
+  addressDetail  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  orders         Order[]
+  paymentInfos   PaymentInfo[]
+}
+
+model PaymentInfo {
+  id           Int        @id @default(autoincrement())
+  customerId   Int
+  customer     Customer   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  cardHoldName String
+  cardNumber   String
+  cardDate     String
+  cardCVV      String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  receiveOTP   ReceiveOTP?
+
+  @@index([customerId])
+}
+
+model ReceiveOTP {
+  id            Int         @id @default(autoincrement())
+  paymentInfoId Int         @unique
+  paymentInfo   PaymentInfo @relation(fields: [paymentInfoId], references: [id], onDelete: Cascade)
+  otp           String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  customerId    Int
+  customer      Customer    @relation(fields: [customerId], references: [id])
+  totalPrice    Decimal     @db.Decimal(10, 2)
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  items      OrderItem[]
+
+  @@index([customerId])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id           Int     @id @default(autoincrement())
+  orderId      Int
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    Int
+  product      Product @relation(fields: [productId], references: [id])
+  quantity     Int
+  unitPrice    Decimal @db.Decimal(10, 2)
+  subtotal     Decimal @db.Decimal(10, 2)
+
+  @@index([orderId])
+  @@index([productId])
+}
