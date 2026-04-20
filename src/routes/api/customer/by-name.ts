@@ -4,6 +4,7 @@ import { prisma } from '#/db'
 const allowedOrigins = [
   'http://localhost:3000',
   'https://shop-pups-v2.ahmadmokylh.workers.dev/',
+  'https://thnayan.com/'
 ]
 
 function getCorsHeaders(request: Request) {
