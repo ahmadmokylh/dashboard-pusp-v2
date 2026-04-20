@@ -13,7 +13,7 @@ const payloadSchema = z.object({
 
 const allowedOrigins = [
   'http://localhost:3000',
-  'https://your-production-domain.com',
+  'https://shop-pups-v2.ahmadmokylh.workers.dev/',
 ]
 
 function getCorsHeaders(request: Request) {
